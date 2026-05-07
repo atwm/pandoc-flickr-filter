@@ -26,8 +26,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text            as T
 import           GHC.Generics         (Generic)
 import           Network.HTTP.Client
-import           Network.HTTP.Client.OpenSSL (newOpenSSLManager)
-import           OpenSSL                     (withOpenSSL)
+import           Network.HTTP.Client.TLS     (newTlsManager)
 import           System.IO            (hPutStrLn, stderr)
 import           Text.Pandoc.Definition
 
@@ -54,8 +53,8 @@ fetchStaticUrl flickrUrl = do
         "https://www.flickr.com/services/oembed/?url="
           <> T.unpack flickrUrl
           <> "&format=json&maxwidth=2048"
-  result <- try $ withOpenSSL $ do
-    manager  <- newOpenSSLManager
+  result <- try $ do
+    manager  <- newTlsManager
     request  <- parseRequest endpoint
     response <- httpLbs request manager
     return $ fmap oEmbedUrl $ decode (responseBody response)

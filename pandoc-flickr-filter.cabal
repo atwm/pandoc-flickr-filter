@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               pandoc-flickr-filter
-version:            0.1.0.0
+version:            0.1.0.1
 synopsis:           Pandoc filter that rewrites Flickr photo page links as figures
 description:
     A Pandoc filter that detects links to Flickr photo pages in a document
@@ -33,10 +33,8 @@ library
           base                  >= 4.18 && < 4.22
         , aeson                 >= 1.5  && < 2.3
         , bytestring            >= 0.10 && < 0.13
-        , HsOpenSSL             >= 0.11 && < 0.12
-        , HsOpenSSL-x509-system >= 0.1  && < 0.2
         , http-client           >= 0.7  && < 0.8
-        , http-client-openssl   >= 0.3  && < 0.4
+        , http-client-tls       >= 0.3  && < 0.4
         , pandoc-types          >= 1.22 && < 1.24
         , text                  >= 1.0  && < 2.2
 
@@ -50,10 +48,8 @@ executable pandoc-flickr-filter
           base                  >= 4.18 && < 4.22
         , aeson                 >= 1.5  && < 2.3
         , bytestring            >= 0.10 && < 0.13
-        , HsOpenSSL             >= 0.11 && < 0.12
-        , HsOpenSSL-x509-system >= 0.1  && < 0.2
         , http-client           >= 0.7  && < 0.8
-        , http-client-openssl   >= 0.3  && < 0.4
+        , http-client-tls       >= 0.3  && < 0.4
         , pandoc-flickr-filter
         , pandoc-types          >= 1.22 && < 1.24
         , text                  >= 1.0  && < 2.2
