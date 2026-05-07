@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               pandoc-flickr-filter
-version:            0.1.0.1
+version:            0.1.0.2
 synopsis:           Pandoc filter that rewrites Flickr photo page links as figures
 description:
     A Pandoc filter that detects links to Flickr photo pages in a document
