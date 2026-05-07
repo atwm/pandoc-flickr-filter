@@ -6,11 +6,13 @@ module FlickrFilter (transformBlocks) where
 import           Control.Exception    (SomeException, try)
 import           Control.Monad        (forM)
 import           Data.Aeson           (FromJSON (..), decode, withObject, (.:))
-import qualified Data.ByteString.Lazy.Char8 as BLC
+import qualified Data.ByteString.Lazy as BL
 import qualified Data.Text            as T
 import           GHC.Generics         (Generic)
+import           Network.HTTP.Client
+import           Network.HTTP.Client.OpenSSL (newOpenSSLManager)
+import           OpenSSL                     (withOpenSSL)
 import           System.IO            (hPutStrLn, stderr)
-import           System.Process       (readProcess)
 import           Text.Pandoc.Definition
 
 -- ---------------------------------------------------------------------------
@@ -31,9 +33,11 @@ fetchStaticUrl flickrUrl = do
         "https://www.flickr.com/services/oembed/?url="
           <> T.unpack flickrUrl
           <> "&format=json&maxwidth=2048"
-  result <- try $ do
-    out <- readProcess "curl" ["-s", "--fail", endpoint] ""
-    return $ fmap oEmbedUrl $ decode (BLC.pack out)
+  result <- try $ withOpenSSL $ do
+    manager  <- newOpenSSLManager
+    request  <- parseRequest endpoint
+    response <- httpLbs request manager
+    return $ fmap oEmbedUrl $ decode (responseBody response)
   case result of
     Left err -> do
       hPutStrLn stderr $

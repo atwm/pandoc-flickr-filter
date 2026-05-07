@@ -1,0 +1,11 @@
+dist-newstyle/
+dist/
+.cabal-sandbox/
+cabal.sandbox.config
+cabal.project.local
+cabal.project.local~
+.ghc.environment.*
+*.o
+*.hi
+*.dyn_o
+*.dyn_hi
