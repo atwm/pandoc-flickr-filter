@@ -1,9 +1,7 @@
 # pandoc-flickr-filter
 
-A [Pandoc](https://pandoc.org) filter that rewrites Flickr photo-page links
-as proper figures with captions, using the
-[Flickr oEmbed API](https://www.flickr.com/services/oembed/) to fetch the
-static image URL.
+[Flickr](https://www.flickr.com) requires a backlink to the original photo page on Flickr for any embedded content. So simply placing the Flickr URL into the markdown will not suffice. What has to be done is to find the correct static page and then wrap this picture in a picture link to the original photo page. This is where the [Pandoc](https://pandoc.org) filter comes in. It rewrites Flickr photo-page links to show both the image and the backlink to the original photo page. The filter transforms Flickr photo-page links in your markdown document into embedded images with captions, ensuring proper attribution to the original source. It does this by fetching the static image URL using the [Flickr oEmbed API](https://www.flickr.com/services/oembed/), allowing you to display Flickr photos seamlessly in your documents while adhering to Flickr's embedding requirements.
+
 
 ## What it does
 
