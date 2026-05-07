@@ -1,23 +1,44 @@
-cabal-version: 2.4
-name:          pandoc-flickr-filter
-version:       0.1.0.0
-author:        Andrew Maier
-maintainer:    andrew@maier.name
+cabal-version:      2.4
+name:               pandoc-flickr-filter
+version:            0.1.0.0
+synopsis:           Pandoc filter that rewrites Flickr photo page links as figures
+description:
+    A Pandoc filter that detects links to Flickr photo pages in a document
+    and rewrites them as proper @Figure@ blocks, fetching the static image URL
+    via the Flickr oEmbed API.
+    .
+    Bare Flickr photo-page URLs — either as plain links or as
+    @![alt](flickr-page-url)@ images — are replaced with a
+    @\<figure\>\/\<figcaption\>@ in HTML or a @\\begin{figure}@ environment
+    in LaTeX.
+category:           Text
+homepage:           https://github.com/iamanelf/pandoc-flickr-filter
+bug-reports:        https://github.com/iamanelf/pandoc-flickr-filter/issues
+license:            MIT
+license-file:       LICENSE
+author:             Andrew Maier
+maintainer:         andrew@maier.name
+extra-source-files: README.md
+extra-doc-files:    CHANGELOG.md
+
+source-repository head
+    type:     git
+    location: https://github.com/iamanelf/pandoc-flickr-filter
 
 library
     exposed-modules:  FlickrFilter
     hs-source-dirs:   .
     default-language: Haskell2010
     build-depends:
-          base                  >= 4
-        , aeson                 >= 1.5
-        , bytestring            >= 0.10
-        , HsOpenSSL             >= 0.11
-        , HsOpenSSL-x509-system >= 0.1
-        , http-client           >= 0.7
-        , http-client-openssl   >= 0.3
-        , pandoc-types          >= 1.22
-        , text                  >= 1.0
+          base                  >= 4.18 && < 4.22
+        , aeson                 >= 1.5  && < 2.3
+        , bytestring            >= 0.10 && < 0.13
+        , HsOpenSSL             >= 0.11 && < 0.12
+        , HsOpenSSL-x509-system >= 0.1  && < 0.2
+        , http-client           >= 0.7  && < 0.8
+        , http-client-openssl   >= 0.3  && < 0.4
+        , pandoc-types          >= 1.22 && < 1.24
+        , text                  >= 1.0  && < 2.2
 
 executable pandoc-flickr-filter
     main-is:          Main.hs
@@ -26,14 +47,14 @@ executable pandoc-flickr-filter
     GHC-Options:      -threaded -rtsopts -with-rtsopts=-N
     default-language: Haskell2010
     build-depends:
-          base                  >= 4
-        , aeson                 >= 1.5
-        , bytestring            >= 0.10
-        , HsOpenSSL             >= 0.11
-        , HsOpenSSL-x509-system >= 0.1
-        , http-client           >= 0.7
-        , http-client-openssl   >= 0.3
+          base                  >= 4.18 && < 4.22
+        , aeson                 >= 1.5  && < 2.3
+        , bytestring            >= 0.10 && < 0.13
+        , HsOpenSSL             >= 0.11 && < 0.12
+        , HsOpenSSL-x509-system >= 0.1  && < 0.2
+        , http-client           >= 0.7  && < 0.8
+        , http-client-openssl   >= 0.3  && < 0.4
         , pandoc-flickr-filter
-        , pandoc-types          >= 1.22
-        , text                  >= 1.0
+        , pandoc-types          >= 1.22 && < 1.24
+        , text                  >= 1.0  && < 2.2
 
