@@ -1,5 +1,15 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- |
+-- Module      : Main
+-- Description : Pandoc JSON filter executable for pandoc-flickr-filter
+-- License     : MIT
+-- Maintainer  : andrew@maier.name
+--
+-- Reads a Pandoc JSON AST from @stdin@, applies 'FlickrFilter.transformBlocks',
+-- and writes the result to @stdout@.  Intended to be used as:
+--
+-- > pandoc --filter pandoc-flickr-filter input.md -o output.html
 module Main where
 
 import qualified Data.Aeson           as Aeson

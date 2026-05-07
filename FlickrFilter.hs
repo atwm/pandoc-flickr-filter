@@ -1,6 +1,22 @@
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 
+-- |
+-- Module      : FlickrFilter
+-- Description : Pandoc filter that rewrites Flickr photo-page links as figures
+-- License     : MIT
+-- Maintainer  : andrew@maier.name
+--
+-- This module provides 'transformBlocks', which walks a Pandoc block list and
+-- rewrites any standalone Flickr photo-page link or image into a 'Figure'
+-- block.  The static image URL is fetched from the Flickr oEmbed API at
+-- transformation time.
+--
+-- Recognised input forms (all on their own paragraph):
+--
+-- * @!&#91;My caption&#93;(https://www.flickr.com/photos/alice/12345678/)@
+-- * @&#91;Link text&#93;(https://www.flickr.com/photos/alice/12345678/)@
+-- * A bare @Figure@ block whose single image points at a Flickr photo page
 module FlickrFilter (transformBlocks) where
 
 import           Control.Exception    (SomeException, try)
@@ -19,14 +35,19 @@ import           Text.Pandoc.Definition
 -- oEmbed
 -- ---------------------------------------------------------------------------
 
+-- | Minimal representation of a Flickr oEmbed JSON response.
+-- We only need the @url@ field (the static image URL).
 newtype OEmbedResponse = OEmbedResponse
   { oEmbedUrl :: T.Text
   } deriving (Show, Generic)
 
 instance FromJSON OEmbedResponse where
-  parseJSON = withObject "OEmbedResponse" $ \v ->
+  parseJSON = withObject "OEmbedResponse" $ \ v ->
     OEmbedResponse <$> v .: "url"
 
+-- | Query the Flickr oEmbed API for @flickrUrl@ and return the static image
+-- URL, or 'Nothing' if the request fails or the response cannot be parsed.
+-- Errors are logged to 'stderr' and do not propagate as exceptions.
 fetchStaticUrl :: T.Text -> IO (Maybe T.Text)
 fetchStaticUrl flickrUrl = do
   let endpoint =
@@ -52,22 +73,30 @@ fetchStaticUrl flickrUrl = do
 -- AST transformation
 -- ---------------------------------------------------------------------------
 
+-- | Return 'True' for URLs that point at a Flickr photo page
+-- (@\/photos\/<user>\/<id>\/@).
 isFlickrPhotoUrl :: T.Text -> Bool
 isFlickrPhotoUrl u =
   "https://www.flickr.com/photos/" `T.isPrefixOf` u ||
   "http://www.flickr.com/photos/"  `T.isPrefixOf` u
 
+-- | Return 'True' for 'Space' and 'SoftBreak' inlines, which are ignored
+-- when deciding whether a paragraph contains a single Flickr reference.
 isWhitespaceInline :: Inline -> Bool
 isWhitespaceInline Space     = True
 isWhitespaceInline SoftBreak = True
 isWhitespaceInline _         = False
 
+-- | A recognised Flickr reference extracted from a paragraph or figure.
 data FlickrRef = FlickrRef
-  { frCaption :: [Inline]
-  , frPageUrl :: T.Text
-  , frTitle   :: T.Text
+  { frCaption :: [Inline] -- ^ Caption/alt-text inlines
+  , frPageUrl :: T.Text   -- ^ Flickr photo-page URL
+  , frTitle   :: T.Text   -- ^ Link title attribute (may be empty)
   }
 
+-- | Try to extract a 'FlickrRef' from the inlines of a paragraph.
+-- Returns 'Nothing' if the paragraph contains anything other than a single
+-- Flickr image or link (whitespace inlines are ignored).
 detectFlickrRef :: [Inline] -> Maybe FlickrRef
 detectFlickrRef inlines =
   case filter (not . isWhitespaceInline) inlines of
@@ -80,6 +109,8 @@ detectFlickrRef inlines =
           Just (FlickrRef content u title)
     _ -> Nothing
 
+-- | Build the replacement 'Figure' block given a 'FlickrRef' and the
+-- resolved static image URL.
 buildReplacement :: FlickrRef -> T.Text -> [Block]
 buildReplacement ref staticUrl =
   [ Figure nullAttr
@@ -89,17 +120,24 @@ buildReplacement ref staticUrl =
   where
     imgAttr = ("", [], [("width", "80%")])
 
+-- | Extract the inline content of a 'Plain' or 'Para' block, returning @[]@
+-- for all other block types.
 blockInlines :: Block -> [Inline]
 blockInlines (Plain ils) = ils
 blockInlines (Para  ils) = ils
 blockInlines _           = []
 
--- | Recursively transform a list of Blocks, replacing standalone Flickr
--- links/images with a Figure containing the static image and a caption.
--- Safe to call multiple times (idempotent).
+-- | Recursively transform a list of 'Block' elements, replacing any
+-- standalone Flickr photo-page link or image with a 'Figure' block that
+-- contains the static image (fetched via the oEmbed API) and a caption.
+--
+-- Blocks that do not match are returned unchanged.  Container blocks
+-- ('Div', 'BlockQuote', lists, etc.) are descended into.
 transformBlocks :: [Block] -> IO [Block]
 transformBlocks = fmap concat . mapM transformBlock
 
+-- | Transform a single 'Block', returning a list so that a match can be
+-- replaced by exactly one 'Figure' without changing the surrounding structure.
 transformBlock :: Block -> IO [Block]
 transformBlock (Para inlines)
   | Just ref <- detectFlickrRef inlines = do
