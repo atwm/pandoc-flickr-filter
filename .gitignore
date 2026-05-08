@@ -9,3 +9,4 @@ cabal.project.local~
 *.hi
 *.dyn_o
 *.dyn_hi
+.vscode/tasks.json

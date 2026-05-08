@@ -108,16 +108,16 @@ detectFlickrRef inlines =
           Just (FlickrRef content u title)
     _ -> Nothing
 
--- | Build the replacement 'Figure' block given a 'FlickrRef' and the
--- resolved static image URL.
-buildReplacement :: FlickrRef -> T.Text -> [Block]
-buildReplacement ref staticUrl =
+-- | Build the replacement 'Figure' block given a CSS @width@ value, a
+-- 'FlickrRef', and the resolved static image URL.
+buildReplacement :: T.Text -> FlickrRef -> T.Text -> [Block]
+buildReplacement width ref staticUrl =
   [ Figure ("", [], [("style", "text-align: center;")])
       (Caption Nothing [Plain (frCaption ref)])
       [Plain [Link nullAttr [Image imgAttr [] (staticUrl, "")] (frPageUrl ref, frTitle ref)]]
   ]
   where
-    imgAttr = ("", [], [("width", "80%")])
+    imgAttr = ("", [], [("width", width)])
 
 -- | Extract the inline content of a 'Plain' or 'Para' block, returning @[]@
 -- for all other block types.
@@ -130,42 +130,45 @@ blockInlines _           = []
 -- standalone Flickr photo-page link or image with a 'Figure' block that
 -- contains the static image (fetched via the oEmbed API) and a caption.
 --
+-- The @width@ argument sets the CSS @width@ property on each generated image
+-- (e.g. @\"100%\"@ or @\"640px\"@).
+--
 -- Blocks that do not match are returned unchanged.  Container blocks
 -- ('Div', 'BlockQuote', lists, etc.) are descended into.
-transformBlocks :: [Block] -> IO [Block]
-transformBlocks = fmap concat . mapM transformBlock
+transformBlocks :: T.Text -> [Block] -> IO [Block]
+transformBlocks width = fmap concat . mapM (transformBlock width)
 
 -- | Transform a single 'Block', returning a list so that a match can be
 -- replaced by exactly one 'Figure' without changing the surrounding structure.
-transformBlock :: Block -> IO [Block]
-transformBlock (Para inlines)
+transformBlock :: T.Text -> Block -> IO [Block]
+transformBlock width (Para inlines)
   | Just ref <- detectFlickrRef inlines = do
       mStaticUrl <- fetchStaticUrl (frPageUrl ref)
       case mStaticUrl of
-        Just staticUrl -> return $ buildReplacement ref staticUrl
+        Just staticUrl -> return $ buildReplacement width ref staticUrl
         Nothing        -> return [Para inlines]
-transformBlock (Figure _ (Caption _ captionBlocks) [Plain [Image _ _ (u, title)]])
+transformBlock width (Figure _ (Caption _ captionBlocks) [Plain [Image _ _ (u, title)]])
   | isFlickrPhotoUrl u = do
       let captionInlines = concatMap blockInlines captionBlocks
       mStaticUrl <- fetchStaticUrl u
       case mStaticUrl of
-        Just staticUrl -> return $ buildReplacement (FlickrRef captionInlines u title) staticUrl
+        Just staticUrl -> return $ buildReplacement width (FlickrRef captionInlines u title) staticUrl
         Nothing        -> return [Figure nullAttr (Caption Nothing captionBlocks) [Plain [Image nullAttr [] (u, title)]]]
-transformBlock (Div attr bs) = do
-  bs' <- transformBlocks bs
+transformBlock width (Div attr bs) = do
+  bs' <- transformBlocks width bs
   return [Div attr bs']
-transformBlock (BlockQuote bs) = do
-  bs' <- transformBlocks bs
+transformBlock width (BlockQuote bs) = do
+  bs' <- transformBlocks width bs
   return [BlockQuote bs']
-transformBlock (BulletList items) = do
-  items' <- mapM transformBlocks items
+transformBlock width (BulletList items) = do
+  items' <- mapM (transformBlocks width) items
   return [BulletList items']
-transformBlock (OrderedList la items) = do
-  items' <- mapM transformBlocks items
+transformBlock width (OrderedList la items) = do
+  items' <- mapM (transformBlocks width) items
   return [OrderedList la items']
-transformBlock (DefinitionList items) = do
+transformBlock width (DefinitionList items) = do
   items' <- forM items $ \(term, defs) -> do
-    defs' <- mapM transformBlocks defs
+    defs' <- mapM (transformBlocks width) defs
     return (term, defs')
   return [DefinitionList items']
-transformBlock b = return [b]
+transformBlock _ b = return [b]
