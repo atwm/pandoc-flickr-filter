@@ -112,7 +112,7 @@ detectFlickrRef inlines =
 -- 'FlickrRef', and the resolved static image URL.
 buildReplacement :: T.Text -> FlickrRef -> T.Text -> [Block]
 buildReplacement width ref staticUrl =
-  [ Figure ("", [], [("style", "text-align: center;")])
+  [ Figure ("", ["flickr-figure"], [("style", "text-align: center;")])
       (Caption Nothing [Plain (frCaption ref)])
       [Plain [Link nullAttr [Image imgAttr [] (staticUrl, "")] (frPageUrl ref, frTitle ref)]]
   ]
